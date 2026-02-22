@@ -1,0 +1,45 @@
+spring.application.name: booking-orchestrator
+
+spring.kafka:
+  producer:
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  consumer:
+    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    properties:
+      spring.json.trusted.packages: "com.aryanaggarwal.base.domain"
+  streams:
+    properties:
+      default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+      default.value.serde: org.springframework.kafka.support.serializer.JsonSerde
+      spring.json.trusted.packages: "com.aryanaggarwal.base.domain"
+    state-dir: /tmp/kafka-streams/
+
+spring.datasource:
+  url: ${DB_URL:jdbc:h2:mem:bookingdb}
+  driver-class-name: ${DB_DRIVER:org.h2.Driver}
+  username: ${DB_USERNAME:sa}
+  password: ${DB_PASSWORD:}
+
+spring.jpa:
+  hibernate:
+    ddl-auto: update
+  show-sql: false
+
+spring.h2.console.enabled: true
+
+booking:
+  expiry-seconds: 300
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,health,metrics
+  endpoint:
+    health:
+      show-details: always
+
+spring.output.ansi.enabled: ALWAYS
+logging.pattern.console: "%clr(%d{HH:mm:ss.SSS}){blue} %clr(---){faint} %clr([%15.15t]){yellow} %clr(:){red} %clr(%m){faint}%n"
