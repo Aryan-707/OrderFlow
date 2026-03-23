@@ -1,7 +1,9 @@
 spring.application.name: seat-inventory-service
 
 spring.kafka:
+  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
   consumer:
+    auto-offset-reset: earliest
     key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
     properties:
@@ -19,6 +21,9 @@ spring.datasource:
 spring.jpa:
   hibernate:
     ddl-auto: update
+  defer-datasource-initialization: true
+
+spring.sql.init.mode: always
 
 spring.h2.console.enabled: true
 

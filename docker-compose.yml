@@ -16,6 +16,11 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       CLUSTER_ID: "MkU3OEVCNTcwNTJENDM2Qk"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
     networks:
       - saga-net
 
@@ -24,10 +29,13 @@ services:
     container_name: postgres
     environment:
       POSTGRES_DB: saga_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -37,36 +45,63 @@ services:
       - saga-net
 
   booking-orchestrator:
-    image: kafka-saga-booking-system/booking-orchestrator:1.0-SNAPSHOT
+    build:
+      context: .
+      dockerfile: booking-orchestrator/Dockerfile
+    container_name: booking-orchestrator
     ports:
       - "8080:8080"
     depends_on:
-      - broker
-      - postgres
+      broker:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
     networks:
       - saga-net
 
   payment-service:
-    image: kafka-saga-booking-system/payment-service:1.0-SNAPSHOT
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    container_name: payment-service
     depends_on:
-      - broker
-      - postgres
+      broker:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
+    restart: on-failure
     networks:
       - saga-net
 
   seat-inventory-service:
-    image: kafka-saga-booking-system/seat-inventory-service:1.0-SNAPSHOT
+    build:
+      context: .
+      dockerfile: seat-inventory-service/Dockerfile
+    container_name: seat-inventory-service
     depends_on:
-      - broker
-      - postgres
+      broker:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
+    restart: on-failure
     networks:
       - saga-net
+
+volumes:
+  pgdata:
 
 networks:
   saga-net:

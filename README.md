@@ -30,7 +30,7 @@ If both services don't respond within the configured timeout (default 5 minutes)
 
 ## Tech Stack
 
-- **Java 21** + **Spring Boot 3.4**
+- **Java 17** + **Spring Boot 3.4**
 - **Apache Kafka** (KRaft mode, no ZooKeeper)
 - **Kafka Streams** for event join/correlation
 - **Spring Data JPA** + **H2** (dev) / **PostgreSQL** (docker)
@@ -40,29 +40,29 @@ If both services don't respond within the configured timeout (default 5 minutes)
 ## Running Locally
 
 ### Prerequisites
-- Java 21+
+- Java 17+
 - Maven 3.9+
-- Docker (for Kafka via Testcontainers)
+- Docker Desktop
 
-### Quick Start
+### Docker Compose (Recommended)
 
-```bash
-# Build the project
-mvn clean install -DskipTests
-
-# Start booking-orchestrator (with Testcontainers Kafka)
-cd booking-orchestrator && mvn spring-boot:test-run
-
-# In separate terminals:
-cd payment-service && mvn spring-boot:test-run
-cd seat-inventory-service && mvn spring-boot:test-run
-```
-
-### Docker Compose (Full Stack)
+### Docker Compose (Recommended)
 
 ```bash
-mvn clean package -DskipTests
-docker-compose up -d
+# 1. Start the full stack (Kafka + PostgreSQL + all 3 services)
+# The multi-stage Dockerfiles will build the application JARs automatically
+docker-compose up --build -d
+
+# 2. Verify everything is running
+docker-compose ps
+
+# 3. Create a test booking
+curl -X POST http://localhost:8080/bookings \
+  -H "Content-Type: application/json" \
+  -d '{"customerId": 1, "seatId": 1, "seatCount": 2, "amount": 200}'
+
+# 5. Stop everything
+docker-compose down
 ```
 
 ## API

@@ -1,15 +1,18 @@
 spring.application.name: booking-orchestrator
 
 spring.kafka:
+  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
   producer:
     key-serializer: org.apache.kafka.common.serialization.StringSerializer
     value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
   consumer:
+    auto-offset-reset: earliest
     key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
     properties:
       spring.json.trusted.packages: "com.aryanaggarwal.base.domain"
   streams:
+    application-id: booking-orchestrator-streams
     properties:
       default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
       default.value.serde: org.springframework.kafka.support.serializer.JsonSerde
