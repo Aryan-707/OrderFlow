@@ -6,22 +6,19 @@ import org.springframework.stereotype.Service;
 import com.aryanaggarwal.base.domain.BookingEvent;
 
 import java.util.Random;
-import java.util.concurrent.Executor;
 
 @Service
 public class BookingGeneratorService {
 
     private static final Random RAND = new Random();
-    private final Executor executor;
     private final KafkaTemplate<String, BookingEvent> template;
 
-    public BookingGeneratorService(Executor executor, KafkaTemplate<String, BookingEvent> template) {
-        this.executor = executor;
+    public BookingGeneratorService(KafkaTemplate<String, BookingEvent> template) {
         this.template = template;
     }
 
     /** Generates test bookings asynchronously to avoid blocking the HTTP thread */
-    @Async
+    @Async("taskExecutor")
     public void generate() {
         for (int i = 0; i < 10000; i++) {
             int multiplier = RAND.nextInt(5) + 1;
