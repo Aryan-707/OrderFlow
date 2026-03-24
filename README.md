@@ -1,100 +1,78 @@
-# OrderFlow
+# 🚀 OrderFlow: My Microservices Booking System
 
-A distributed booking system implementing the **SAGA pattern** using **Spring Boot**, **Apache Kafka**, and **Kafka Streams** for coordinating transactions across microservices.
+Hi there! 👋 Welcome to my distributed booking system project. I built this to dive deep into microservices architecture and learn how complex systems talk to each other. 
 
-## Architecture
+It implements the **SAGA Pattern** using **Spring Boot**, **Apache Kafka**, and **Kafka Streams** to coordinate transactions safely across three different backend microservices.
 
-The system consists of three microservices that communicate exclusively through Kafka topics:
+---
 
-- **booking-orchestrator** — Creates bookings, orchestrates the SAGA flow using Kafka Streams join, and manages booking lifecycle including expiry
-- **payment-service** — Handles customer balance reservation and rollback
-- **seat-inventory-service** — Manages seat availability reservation and rollback
+## 📸 Live Demo & Screenshots
 
-### SAGA Flow
+> **🌐 A Quick Note on Live Deployment (Why there is no live link)**  
+> *Since this architecture runs three separate Spring Boot instances, a PostgreSQL database, and a fully-fledged Apache Kafka cluster, it requires a lot of RAM! As a fresher, keeping this hosted 24/7 on AWS/cloud servers was getting too expensive. But don't worry—I've tested it thoroughly! See the screenshots below showing the Kafka events and Docker containers in action, or follow the instructions at the bottom to spin it up locally in one click!*
 
-```
-1. Client creates a booking → published to "bookings-new" topic
-2. payment-service and seat-inventory-service process in parallel
-3. Each service responds with ACCEPTED/REJECTED to their response topic
-4. Kafka Streams joins both responses within a 10-second window
-5. If both ACCEPTED → CONFIRMED
-   If one REJECTED → ROLLBACK (compensating transaction)
-   If both REJECTED → REJECTED
-6. Final result published to "bookings-results"
-7. Both services receive the result and commit or rollback their local state
-```
+### 1. The Setup (Everything running smoothly in Docker)
+![Docker Containers](./containers.png)
+*(All 5 microservices booting up perfectly using Docker Compose)*
 
-### Booking Expiry
+### 2. The API Trigger (Generating a Booking)
+![API Request](./api-request.png)
+*(Sending a POST request to hit our Orchestrator endpoint)*
 
-If both services don't respond within the configured timeout (default 5 minutes), the `BookingExpiryJob` marks the booking as `EXPIRED` and publishes a `ROLLBACK` event.
+### 3. The SAGA Magic (Behind the scenes)
+![Kafka SAGA Logs](./saga-logs.png)
+*(Kafka successfully routing messages between the Payment Service and Orchestrator to confirm the transaction!)*
 
-## Tech Stack
+---
 
-- **Java 17** + **Spring Boot 3.4**
-- **Apache Kafka** (KRaft mode, no ZooKeeper)
-- **Kafka Streams** for event join/correlation
-- **Spring Data JPA** + **H2** (dev) / **PostgreSQL** (docker)
-- **Micrometer** + **Prometheus** for metrics
-- **JUnit 5** + **EmbeddedKafka** for testing
+## 🏗️ How it Works (Architecture)
 
-## Running Locally
+The system is split into three main microservices that communicate *only* through Kafka topics. No direct HTTP calls!
 
-### Prerequisites
-- Java 17+
-- Maven 3.9+
-- Docker Desktop
+- **booking-orchestrator**: Creates the initial booking and manages the SAGA flow using Kafka Streams.
+- **payment-service**: Handles taking the customer's balance.
+- **seat-inventory-service**: Books the physical seat.
 
-### Docker Compose (Recommended)
+**The SAGA Flow I implemented:**
+1. A booking is created → published to `"bookings-new"`.
+2. The Payment and Seat services process this in parallel.
+3. They respond with `ACCEPTED` or `REJECTED`.
+4. Kafka Streams joins both of these responses. 
+5. If both accept, it's `CONFIRMED`. If one rejects, it `ROLLBACKS` the entire transaction via compensation!
 
-### Docker Compose (Recommended)
+---
+
+## 💻 Tech Stack (What I Used)
+- **Java 17** + **Spring Boot**
+- **Apache Kafka** (No ZooKeeper, using KRaft)
+- **Docker & Docker Compose**
+- **PostgreSQL** + **Spring Data JPA**
+- **Kafka Streams** 
+
+---
+
+## 🛠️ Want to Run this yourself? (Local Deployment)
+
+Since I'm not hosting it live, I made it incredibly easy for anyone to test it locally. You only need **Docker**.
 
 ```bash
-# 1. Start the full stack (Kafka + PostgreSQL + all 3 services)
-# The multi-stage Dockerfiles will build the application JARs automatically
+# 1. Clone this repository!
+git clone https://github.com/Aryan-707/OrderFlow.git
+cd OrderFlow
+
+# 2. Spin up the entire multi-container architecture in one single command:
 docker-compose up --build -d
 
-# 2. Verify everything is running
-docker-compose ps
-
-# 3. Create a test booking
-curl -X POST http://localhost:8080/bookings \
+# 3. Create a test booking yourself
+curl -s -X POST http://localhost:8080/bookings \
   -H "Content-Type: application/json" \
-  -d '{"customerId": 1, "seatId": 1, "seatCount": 2, "amount": 200}'
+  -d '{"id": "test-booking-1", "customerId": 1, "seatId": 1, "amount": 200}' | jq
 
-# 5. Stop everything
+# 4. View the magic in the logs!
+docker-compose logs | grep SAGA | tail -n 15
+
+# 5. Bring it all down
 docker-compose down
 ```
 
-## API
-
-### Create Booking
-```bash
-curl -X POST http://localhost:8080/bookings \
-  -H "Content-Type: application/json" \
-  -d '{"customerId": 1, "seatId": 1, "seatCount": 2, "amount": 200}'
-```
-
-### Check Booking Status
-```bash
-curl http://localhost:8080/bookings/{id}
-```
-
-### List All Bookings
-```bash
-curl http://localhost:8080/bookings
-```
-
-## Kafka Topics
-
-| Topic | Purpose |
-|-------|---------|
-| `bookings-new` | New booking requests |
-| `payment-responses` | Payment service accept/reject |
-| `seat-reservation-responses` | Seat service accept/reject |
-| `bookings-results` | Final SAGA outcome |
-
-## Running Tests
-
-```bash
-mvn test
-```
+Thanks for checking out my project!
