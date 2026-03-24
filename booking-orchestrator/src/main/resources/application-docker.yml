@@ -1,6 +1,6 @@
 spring.kafka.bootstrap-servers: broker:9092
 spring.datasource:
-  url: jdbc:postgresql://postgres:5432/saga_db
+  url: jdbc:postgresql://postgres:5432/orderflow_db
   driver-class-name: org.postgresql.Driver
   username: postgres
   password: postgres

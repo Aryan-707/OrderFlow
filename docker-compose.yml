@@ -22,13 +22,13 @@ services:
       timeout: 10s
       retries: 10
     networks:
-      - saga-net
+      - orderflow-net
 
   postgres:
     image: postgres:16-alpine
     container_name: postgres
     environment:
-      POSTGRES_DB: saga_db
+      POSTGRES_DB: orderflow_db
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
@@ -42,7 +42,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - saga-net
+      - orderflow-net
 
   booking-orchestrator:
     build:
@@ -66,7 +66,7 @@ services:
       retries: 5
       start_period: 40s
     networks:
-      - saga-net
+      - orderflow-net
 
   payment-service:
     build:
@@ -82,7 +82,7 @@ services:
       SPRING_PROFILES_ACTIVE: docker
     restart: on-failure
     networks:
-      - saga-net
+      - orderflow-net
 
   seat-inventory-service:
     build:
@@ -98,10 +98,10 @@ services:
       SPRING_PROFILES_ACTIVE: docker
     restart: on-failure
     networks:
-      - saga-net
+      - orderflow-net
 
 volumes:
   pgdata:
 
 networks:
-  saga-net:
+  orderflow-net:
